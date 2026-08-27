@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cổng Quản lý DNS & Cấp phát Tên miền FIT</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌐</text></svg>">
+</head>
+<body>
+
+  <!-- Header / Navigation -->
+  <header class="navbar">
+    <div class="container nav-container">
+      <div class="brand-logo">
+        <div class="logo-icon">🌐</div>
+        <div>
+          <span>FIT DNS PORTAL</span>
+          <span style="font-size: 0.7rem; display: block; color: var(--text-secondary); font-weight: 500;">Khoa Công Nghệ Thông Tin</span>
+        </div>
+      </div>
+      <div class="nav-actions">
+        <button id="themeToggleBtn" class="btn btn-secondary btn-icon" title="Chuyển đổi giao diện Sáng/Tối">
+          🌙
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="container">
+    <div class="auth-wrapper">
+      <div class="auth-card">
+        
+        <!-- Header Info -->
+        <div style="text-align: center; margin-bottom: 24px;">
+          <h2 style="font-size: 1.5rem; margin-bottom: 6px;">Hệ thống Cấp phát DNS FIT</h2>
+          <p style="color: var(--text-secondary); font-size: 0.88rem;">
+            Tạo Subdomain & Trỏ IP cho các đồ án môn học, máy chủ cá nhân
+          </p>
+        </div>
+
+        <!-- Tab Switching (Đăng nhập / Đăng ký) -->
+        <div class="auth-tabs">
+          <button id="tabLoginBtn" class="auth-tab-btn active">Đăng Nhập</button>
+          <button id="tabRegisterBtn" class="auth-tab-btn">Đăng Ký Tài Khoản</button>
+        </div>
+
+        <!-- Alert Notification Box -->
+        <div id="authAlert" class="alert" style="display: none;"></div>
+
+        <!-- Form Đăng Nhập -->
+        <form id="loginForm">
+          <div class="form-group">
+            <label class="form-label" for="loginUsername">
+              Mã số sinh viên / Tên đăng nhập <span class="required">*</span>
+            </label>
+            <input type="text" id="loginUsername" class="form-control" placeholder="Nhập MSSV hoặc 'admin'" required autocomplete="username">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="loginPassword">
+              Mật khẩu <span class="required">*</span>
+            </label>
+            <input type="password" id="loginPassword" class="form-control" placeholder="••••••••" required autocomplete="current-password">
+          </div>
+
+          <button type="submit" id="loginSubmitBtn" class="btn btn-primary" style="width: 100%; margin-top: 10px; padding: 12px;">
+            Đăng Nhập Vào Hệ Thống
+          </button>
+        </form>
+
+        <!-- Form Đăng Ký Sinh Viên -->
+        <form id="registerForm" style="display: none;">
+          <div class="form-group">
+            <label class="form-label" for="regUsername">
+              Mã số sinh viên (MSSV) <span class="required">*</span>
+            </label>
+            <input type="text" id="regUsername" class="form-control" placeholder="Ví dụ: 21110001" required autocomplete="off">
+            <div class="form-hint">MSSV sẽ được dùng làm tên đăng nhập chính của bạn</div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="regFullName">
+              Họ và tên sinh viên <span class="required">*</span>
+            </label>
+            <input type="text" id="regFullName" class="form-control" placeholder="Ví dụ: Nguyễn Văn An" required autocomplete="name">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="regClassName">
+              Lớp sinh hoạt <span class="required">*</span>
+            </label>
+            <input type="text" id="regClassName" class="form-control" placeholder="Ví dụ: 21FIT01 hoặc CNTT K21" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="regPassword">
+              Mật khẩu <span class="required">*</span>
+            </label>
+            <input type="password" id="regPassword" class="form-control" placeholder="Tối thiểu 6 ký tự" required autocomplete="new-password">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="regConfirmPassword">
+              Xác nhận mật khẩu <span class="required">*</span>
+            </label>
+            <input type="password" id="regConfirmPassword" class="form-control" placeholder="Nhập lại mật khẩu" required autocomplete="new-password">
+          </div>
+
+          <div class="alert alert-warning" style="font-size: 0.82rem; padding: 10px 14px; margin-bottom: 16px;">
+            ℹ️ Sau khi đăng ký, tài khoản sẽ được gửi đến <strong>Ban Quản Trị / Giảng viên</strong> để xét duyệt. Bạn sẽ có thể tạo Subdomain ngay khi tài khoản được kích hoạt.
+          </div>
+
+          <button type="submit" id="registerSubmitBtn" class="btn btn-primary" style="width: 100%; padding: 12px;">
+            Gửi Đăng Ký Tài Khoản
+          </button>
+        </form>
+
+        <!-- Footer Info inside Card -->
+        <div style="text-align: center; margin-top: 24px; font-size: 0.8rem; color: var(--text-muted);">
+          Bảo mật & Đồng bộ qua Cloudflare API v4
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="/js/common.js"></script>
+  <script src="/js/auth.js"></script>
+</body>
+</html>

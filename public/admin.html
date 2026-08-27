@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bảng Quản Trị Hệ Thống DNS FIT</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛡️</text></svg>">
+</head>
+<body>
+
+  <!-- Navbar -->
+  <header class="navbar">
+    <div class="container nav-container">
+      <div class="brand-logo">
+        <div class="logo-icon" style="background: var(--accent-gradient-orange);">🛡️</div>
+        <div>
+          <span>FIT DNS ADMIN</span>
+          <span style="font-size: 0.7rem; display: block; color: var(--text-secondary); font-weight: 500;">Bảng Quản Trị Hệ Thống</span>
+        </div>
+      </div>
+      <div class="nav-actions">
+        <div class="user-badge">
+          <div class="user-avatar" style="background: var(--accent-gradient-orange);">AD</div>
+          <div>
+            <div id="adminFullName" style="font-weight: 700; line-height: 1.2;">Quản Trị Viên</div>
+            <div style="font-size: 0.75rem; color: var(--status-approved-text);">Toàn Quyền Quản Lý</div>
+          </div>
+        </div>
+
+        <button id="themeToggleBtn" class="btn btn-secondary btn-icon" title="Đổi màu giao diện">🌙</button>
+        <button class="btn btn-secondary btn-sm" onclick="openModal('adminChangePasswordModal')">Đổi Mật Khẩu</button>
+        <button class="btn btn-danger btn-sm" onclick="handleAdminLogout()">Đăng Xuất</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="container" style="padding-top: 28px; padding-bottom: 60px;">
+    
+    <!-- Stats Grid -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon amber">⏳</div>
+        <div>
+          <div class="stat-value" id="statPendingCount" style="color: var(--status-pending-text);">0</div>
+          <div class="stat-label">Sinh viên Chờ Duyệt</div>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon emerald">👥</div>
+        <div>
+          <div class="stat-value" id="statApprovedCount">0</div>
+          <div class="stat-label">Sinh viên Đã Duyệt</div>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon indigo">🌐</div>
+        <div>
+          <div class="stat-value" id="statTotalDnsCount">0</div>
+          <div class="stat-label">Tổng Subdomain Đang Trỏ</div>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon orange">☁️</div>
+        <div>
+          <div class="stat-value" id="statCfStatus" style="font-size: 1rem;">Đang kiểm tra...</div>
+          <div class="stat-label">Trạng thái Cloudflare API</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Admin Navigation Tabs -->
+    <div class="admin-nav-tabs">
+      <button class="admin-nav-btn active" onclick="switchAdminTab('pending')" id="tabBtnPending">
+        <span>⏳ Chờ Duyệt</span>
+        <span class="tab-badge" id="pendingTabBadge" style="display: none;">0</span>
+      </button>
+      <button class="admin-nav-btn" onclick="switchAdminTab('users')" id="tabBtnUsers">
+        <span>👥 Danh Sách Sinh Viên</span>
+      </button>
+      <button class="admin-nav-btn" onclick="switchAdminTab('dns')" id="tabBtnDns">
+        <span>🌐 Quản Lý Toàn Bộ DNS</span>
+      </button>
+      <button class="admin-nav-btn" onclick="switchAdminTab('settings')" id="tabBtnSettings">
+        <span>⚙️ Cấu Hình Cloudflare & Hệ Thống</span>
+      </button>
+      <button class="admin-nav-btn" onclick="switchAdminTab('logs')" id="tabBtnLogs">
+        <span>📋 Nhật Ký Hoạt Động</span>
+      </button>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- TAB 1: SINH VIÊN CHỜ DUYỆT                                                -->
+    <!-- ========================================================================= -->
+    <section id="secPending" class="card">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">
+            <span>Danh Sách Đăng Ký Chờ Phê Duyệt</span>
+            <span id="pendingCountTitleBadge" class="badge badge-pending">0 yêu cầu</span>
+          </h2>
+          <p style="color: var(--text-secondary); font-size: 0.88rem; margin-top: 4px;">
+            Xét duyệt các tài khoản sinh viên mới đăng ký để cho phép tạo và quản lý Subdomain
+          </p>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="loadPendingUsers()">🔄 Làm mới</button>
+      </div>
+
+      <div class="table-responsive">
+        <table class="custom-table">
+          <thead>
+            <tr>
+              <th>MSSV (Tên Đăng Nhập)</th>
+              <th>Họ và Tên</th>
+              <th>Lớp</th>
+              <th>Thời gian đăng ký</th>
+              <th style="text-align: right;">Hành động Phê duyệt</th>
+            </tr>
+          </thead>
+          <tbody id="pendingTableBody">
+            <tr>
+              <td colspan="5" style="text-align: center; padding: 40px;">Đang tải danh sách chờ duyệt...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- TAB 2: QUẢN LÝ TẤT CẢ SINH VIÊN                                          -->
+    <!-- ========================================================================= -->
+    <section id="secUsers" class="card" style="display: none;">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">Quản Lý Toàn Bộ Sinh Viên</h2>
+          <p style="color: var(--text-secondary); font-size: 0.88rem; margin-top: 4px;">
+            Tìm kiếm, xem số lượng subdomain, điều chỉnh hạn mức Quota hoặc khóa tài khoản
+          </p>
+        </div>
+      </div>
+
+      <!-- Filters & Search -->
+      <div style="display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap;">
+        <div style="flex: 1; min-width: 250px;">
+          <input type="text" id="userSearchInput" class="form-control" placeholder="🔍 Tìm kiếm theo MSSV, Họ tên hoặc Lớp..." oninput="handleUserSearch()">
+        </div>
+        <div>
+          <select id="userStatusFilter" class="form-control" onchange="loadAllUsers()">
+            <option value="all">Tất cả trạng thái</option>
+            <option value="approved">Đã duyệt (Approved)</option>
+            <option value="pending">Chờ duyệt (Pending)</option>
+            <option value="blocked">Đang khóa / Từ chối</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="custom-table">
+          <thead>
+            <tr>
+              <th>MSSV</th>
+              <th>Họ và Tên</th>
+              <th>Lớp</th>
+              <th>Trạng thái</th>
+              <th>Subdomain đã tạo</th>
+              <th>Hạn mức (Quota)</th>
+              <th style="text-align: right;">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="allUsersTableBody">
+            <tr>
+              <td colspan="7" style="text-align: center; padding: 40px;">Đang tải dữ liệu...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- TAB 3: QUẢN LÝ TOÀN BỘ DNS BẢN GHI                                        -->
+    <!-- ========================================================================= -->
+    <section id="secDns" class="card" style="display: none;">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">Quản Lý Toàn Bộ Bản Ghi DNS</h2>
+          <p style="color: var(--text-secondary); font-size: 0.88rem; margin-top: 4px;">
+            Tổng hợp tất cả Subdomain được cấp phát cho sinh viên toàn trường
+          </p>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="loadAllDnsRecords()">🔄 Làm mới</button>
+      </div>
+
+      <!-- Search & Filter -->
+      <div style="display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap;">
+        <div style="flex: 1; min-width: 250px;">
+          <input type="text" id="dnsSearchInput" class="form-control" placeholder="🔍 Tìm theo Tên miền, IP, MSSV hoặc Họ tên..." oninput="handleDnsSearch()">
+        </div>
+        <div>
+          <select id="dnsTypeFilter" class="form-control" onchange="loadAllDnsRecords()">
+            <option value="all">Tất cả loại (A, CNAME, AAAA...)</option>
+            <option value="A">Loại A (IPv4)</option>
+            <option value="CNAME">Loại CNAME</option>
+            <option value="AAAA">Loại AAAA (IPv6)</option>
+            <option value="TXT">Loại TXT</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="custom-table">
+          <thead>
+            <tr>
+              <th>Tên Miền (Subdomain)</th>
+              <th>Loại</th>
+              <th>Đích Trỏ Tới (Content)</th>
+              <th>Cloudflare Proxy</th>
+              <th>Sinh Viên Sở Hữu</th>
+              <th>Ngày Tạo</th>
+              <th style="text-align: right;">Hành động</th>
+            </tr>
+          </thead>
+          <tbody id="allDnsTableBody">
+            <tr>
+              <td colspan="7" style="text-align: center; padding: 40px;">Đang tải danh sách DNS...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- TAB 4: CẤU HÌNH CLOUDFLARE & HỆ THỐNG                                    -->
+    <!-- ========================================================================= -->
+    <section id="secSettings" class="card" style="display: none;">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">⚙️ Cấu Hình Cloudflare API & Thông Số Hệ Thống</h2>
+          <p style="color: var(--text-secondary); font-size: 0.88rem; margin-top: 4px;">
+            Cấu hình Token, Zone ID để hệ thống tự động đồng bộ bản ghi DNS với máy chủ Cloudflare
+          </p>
+        </div>
+      </div>
+
+      <form id="settingsForm">
+        
+        <!-- Cloudflare API Token -->
+        <div class="form-group">
+          <label class="form-label" for="cfgCfToken">
+            Cloudflare API Token <span class="required">*</span>
+          </label>
+          <input type="password" id="cfgCfToken" class="form-control" placeholder="Nhập Cloudflare API Token (Cần quyền: Zone.DNS Edit)">
+          <div class="form-hint" id="cfgCfTokenHint">
+            Lấy Token tại: <a href="https://dash.cloudflare.com/profile/api-tokens" target="_blank" rel="noopener noreferrer">Cloudflare Dashboard > API Tokens > Create Token > Edit zone DNS</a>
+          </div>
+        </div>
+
+        <!-- Cloudflare Zone ID -->
+        <div class="form-group">
+          <label class="form-label" for="cfgCfZone">
+            Cloudflare Zone ID <span class="required">*</span>
+          </label>
+          <div class="input-group">
+            <input type="text" id="cfgCfZone" class="form-control" placeholder="Ví dụ: d89c83693e5069be3da33454b52479e0">
+            <button type="button" class="btn btn-secondary" onclick="handleFetchZones()" title="Tự động lấy danh sách Zone ID từ Token">
+              🔍 Lấy Danh Sách Zone
+            </button>
+          </div>
+          <div class="form-hint">Zone ID của tên miền được quản lý trên Cloudflare</div>
+        </div>
+
+        <!-- Zone Select helper dropdown -->
+        <div class="form-group" id="zoneSelectGroup" style="display: none;">
+          <label class="form-label">Chọn nhanh Zone ID từ tài khoản Cloudflare:</label>
+          <select id="zoneSelectDropdown" class="form-control" onchange="handleSelectZoneFromDropdown()">
+            <option value="">-- Chọn Zone ID --</option>
+          </select>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-bottom: 24px;">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="handleTestCloudflareConnection()">
+            ⚡ Kiểm Tra Kết Nối Cloudflare
+          </button>
+          <span id="testConnectionResult" style="font-size: 0.88rem; display: flex; align-items: center;"></span>
+        </div>
+
+        <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 24px 0;">
+
+        <!-- Root Domain -->
+        <div class="form-group">
+          <label class="form-label" for="cfgRootDomain">
+            Tên miền chính thức (Root Domain) <span class="required">*</span>
+          </label>
+          <input type="text" id="cfgRootDomain" class="form-control" placeholder="fit.pro.vn" required>
+          <div class="form-hint">Mọi subdomain sinh viên tạo sẽ có đuôi là tên miền này (VD: *.fit.pro.vn)</div>
+        </div>
+
+        <!-- Default Max Subdomains -->
+        <div class="form-group">
+          <label class="form-label" for="cfgDefaultQuota">
+            Hạn mức Subdomain mặc định cho mỗi sinh viên <span class="required">*</span>
+          </label>
+          <input type="number" id="cfgDefaultQuota" class="form-control" min="1" max="100" value="5" required>
+        </div>
+
+        <!-- Reserved Subdomains -->
+        <div class="form-group">
+          <label class="form-label" for="cfgReservedWords">
+            Danh sách Subdomain bị cấm (phân cách bằng dấu phẩy)
+          </label>
+          <textarea id="cfgReservedWords" class="form-control" rows="3" placeholder="admin,api,mail,www,cpanel,root,dns,gateway..."></textarea>
+          <div class="form-hint">Sinh viên sẽ không thể đăng ký các tên miền nằm trong danh sách này</div>
+        </div>
+
+        <button type="submit" id="btnSaveSettings" class="btn btn-primary" style="padding: 12px 24px;">
+          💾 Lưu Cấu Hình Hệ Thống
+        </button>
+      </form>
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- TAB 5: NHẬT KÝ HOẠT ĐỘNG (AUDIT LOGS)                                     -->
+    <!-- ========================================================================= -->
+    <section id="secLogs" class="card" style="display: none;">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">📋 Nhật Ký Hoạt Động Hệ Thống</h2>
+          <p style="color: var(--text-secondary); font-size: 0.88rem; margin-top: 4px;">
+            Ghi nhận các sự kiện đăng ký, phê duyệt, tạo và xóa bản ghi DNS
+          </p>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="loadAuditLogs()">🔄 Làm mới</button>
+      </div>
+
+      <div class="table-responsive">
+        <table class="custom-table">
+          <thead>
+            <tr>
+              <th>Thời Gian</th>
+              <th>Tài Khoản</th>
+              <th>Hành Động</th>
+              <th>Chi Tiết</th>
+              <th>Địa Chỉ IP</th>
+            </tr>
+          </thead>
+          <tbody id="auditLogsTableBody">
+            <tr>
+              <td colspan="5" style="text-align: center; padding: 40px;">Đang tải nhật ký...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL: Từ Chối Phê Duyệt                                                  -->
+  <!-- ========================================================================= -->
+  <div id="rejectUserModal" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 style="font-size: 1.2rem;">❌ Từ Chối Phê Duyệt Tài Khoản</h3>
+        <button class="btn btn-secondary btn-icon" onclick="closeModal('rejectUserModal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="rejectUserId">
+        <div style="margin-bottom: 14px;">
+          Bạn đang từ chối tài khoản sinh viên: <strong id="rejectUserName" style="color: var(--accent-secondary);">...</strong>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="rejectReason">Lý do từ chối (hiển thị cho sinh viên)</label>
+          <input type="text" id="rejectReason" class="form-control" placeholder="Thông tin MSSV/Lớp chưa chính xác, không thuộc danh sách khoa...">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('rejectUserModal')">Hủy</button>
+        <button type="button" class="btn btn-danger" onclick="submitRejectUser()">Xác Nhận Từ Chối</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL: Đổi Quota Sinh Viên                                                -->
+  <!-- ========================================================================= -->
+  <div id="quotaModal" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 style="font-size: 1.2rem;">📊 Điều Chỉnh Hạn Mức Subdomain</h3>
+        <button class="btn btn-secondary btn-icon" onclick="closeModal('quotaModal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="quotaUserId">
+        <div style="margin-bottom: 14px;">
+          Sinh viên: <strong id="quotaUserLabel">...</strong>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="quotaNumberInput">Số lượng Subdomain tối đa cho phép</label>
+          <input type="number" id="quotaNumberInput" class="form-control" min="1" max="100" required>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('quotaModal')">Hủy</button>
+        <button type="button" class="btn btn-primary" onclick="submitUserQuota()">Lưu Hạn Mức</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL: Reset Mật Khẩu Sinh Viên                                           -->
+  <!-- ========================================================================= -->
+  <div id="resetPasswordModal" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 style="font-size: 1.2rem;">🔑 Đặt Lại Mật Khẩu Sinh Viên</h3>
+        <button class="btn btn-secondary btn-icon" onclick="closeModal('resetPasswordModal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="resetPassUserId">
+        <div style="margin-bottom: 14px;">
+          Đặt lại mật khẩu cho: <strong id="resetPassUserLabel">...</strong>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="resetPassNewValue">Mật khẩu mới</label>
+          <input type="text" id="resetPassNewValue" class="form-control" placeholder="Nhập mật khẩu mới (tối thiểu 6 ký tự)" minlength="6" required>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('resetPasswordModal')">Hủy</button>
+        <button type="button" class="btn btn-primary" onclick="submitResetUserPassword()">Xác Nhận Đặt Lại</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL: Đổi Mật Khẩu Admin                                                 -->
+  <!-- ========================================================================= -->
+  <div id="adminChangePasswordModal" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 style="font-size: 1.2rem;">🔒 Đổi Mật Khẩu Admin</h3>
+        <button class="btn btn-secondary btn-icon" onclick="closeModal('adminChangePasswordModal')">✕</button>
+      </div>
+      <form id="adminChangePasswordForm">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label" for="adminCurrentPass">Mật khẩu hiện tại <span class="required">*</span></label>
+            <input type="password" id="adminCurrentPass" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="adminNewPass">Mật khẩu mới <span class="required">*</span></label>
+            <input type="password" id="adminNewPass" class="form-control" minlength="6" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="adminConfirmPass">Xác nhận mật khẩu mới <span class="required">*</span></label>
+            <input type="password" id="adminConfirmPass" class="form-control" minlength="6" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('adminChangePasswordModal')">Hủy</button>
+          <button type="submit" class="btn btn-primary">Lưu Mật Khẩu Mới</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/js/common.js"></script>
+  <script src="/js/admin.js"></script>
+</body>
+</html>

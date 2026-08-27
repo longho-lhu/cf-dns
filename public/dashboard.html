@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bảng Điều Khiển Sinh Viên - FIT DNS Management</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌐</text></svg>">
+</head>
+<body>
+
+  <!-- Navbar -->
+  <header class="navbar">
+    <div class="container nav-container">
+      <div class="brand-logo">
+        <div class="logo-icon">🌐</div>
+        <div>
+          <span>FIT DNS PORTAL</span>
+          <span style="font-size: 0.7rem; display: block; color: var(--text-secondary); font-weight: 500;">Bảng Điều Khiển Sinh Viên</span>
+        </div>
+      </div>
+      <div class="nav-actions">
+        <!-- User Info Badge -->
+        <div class="user-badge">
+          <div class="user-avatar" id="userAvatar">SV</div>
+          <div>
+            <div id="userFullName" style="font-weight: 700; line-height: 1.2;">Đang tải...</div>
+            <div id="userMeta" style="font-size: 0.75rem; color: var(--text-muted);">MSSV: ... | Lớp: ...</div>
+          </div>
+        </div>
+
+        <button id="themeToggleBtn" class="btn btn-secondary btn-icon" title="Đổi màu giao diện">🌙</button>
+        <button class="btn btn-secondary btn-sm" onclick="openModal('changePasswordModal')">Đổi Mật Khẩu</button>
+        <button class="btn btn-danger btn-sm" onclick="handleLogout()">Đăng Xuất</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="container" style="padding-top: 28px; padding-bottom: 48px;">
+    
+    <!-- Account Status Alert (Nếu chưa được duyệt) -->
+    <div id="accountStatusAlert" style="display: none;"></div>
+
+    <!-- Stats Overview Cards -->
+    <div class="stats-grid">
+      <!-- Quota Usage Card -->
+      <div class="stat-card">
+        <div class="stat-icon indigo">📊</div>
+        <div style="flex: 1;">
+          <div class="stat-value"><span id="statUsed">0</span> / <span id="statMax">5</span></div>
+          <div class="stat-label">Hạn mức Subdomain đã dùng</div>
+          <div class="progress-bar-container">
+            <div id="quotaProgressBar" class="progress-bar-fill" style="width: 0%;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Root Domain Card -->
+      <div class="stat-card">
+        <div class="stat-icon emerald">🌍</div>
+        <div>
+          <div class="stat-value" id="statRootDomain" style="font-size: 1.25rem;">fit.pro.vn</div>
+          <div class="stat-label">Tên miền chính thức (Root Domain)</div>
+        </div>
+      </div>
+
+      <!-- Account Approval Status -->
+      <div class="stat-card">
+        <div class="stat-icon amber">🛡️</div>
+        <div>
+          <div class="stat-value" id="statStatusBadge" style="font-size: 1.1rem;">
+            <span class="badge badge-pending">Đang tải...</span>
+          </div>
+          <div class="stat-label">Trạng thái phê duyệt</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Subdomain Management Section -->
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">
+            <span>Danh Sách Tên Miền Của Bạn</span>
+            <span id="recordCountBadge" class="badge badge-type">0 bản ghi</span>
+          </h2>
+          <p style="color: var(--text-secondary); font-size: 0.88rem; margin-top: 4px;">
+            Quản lý các Subdomain, trỏ IP máy chủ và cấu hình Cloudflare Proxy CDN
+          </p>
+        </div>
+
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <button id="btnCreateSubdomain" class="btn btn-primary" onclick="openCreateModal()">
+            <span>➕ Tạo Subdomain Mới</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- DNS Records Table -->
+      <div class="table-responsive">
+        <table class="custom-table" id="studentRecordsTable">
+          <thead>
+            <tr>
+              <th>Tên Miền (Subdomain)</th>
+              <th>Loại</th>
+              <th>Địa chỉ Đích (IP / Host)</th>
+              <th>Cloudflare Proxy</th>
+              <th>Thời gian tạo</th>
+              <th style="text-align: right;">Hành động</th>
+            </tr>
+          </thead>
+          <tbody id="studentRecordsBody">
+            <tr>
+              <td colspan="6" style="text-align: center; padding: 40px;">Đang tải danh sách bản ghi...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL: Tạo Subdomain Mới                                                  -->
+  <!-- ========================================================================= -->
+  <div id="createSubdomainModal" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 style="font-size: 1.2rem;">🚀 Tạo Subdomain & Cấu hình DNS</h3>
+        <button class="btn btn-secondary btn-icon" onclick="closeModal('createSubdomainModal')">✕</button>
+      </div>
+      <form id="createRecordForm">
+        <div class="modal-body">
+          
+          <!-- Subdomain Input with Live Preview -->
+          <div class="form-group">
+            <label class="form-label" for="subdomainInput">
+              Tên Subdomain mong muốn <span class="required">*</span>
+            </label>
+            <div class="input-group">
+              <input type="text" id="subdomainInput" class="form-control" placeholder="vidu-web, demo-mssv..." required oninput="updateSubdomainPreview()">
+              <div class="input-group-addon" id="addonRootDomain">.fit.pro.vn</div>
+            </div>
+            <div class="form-hint" id="subdomainLivePreview">
+              👉 Tên miền đầy đủ: <strong style="color: var(--accent-secondary);" id="previewFullDomain">---.fit.pro.vn</strong>
+            </div>
+          </div>
+
+          <!-- Record Type -->
+          <div class="form-group">
+            <label class="form-label" for="recordType">
+              Loại bản ghi (DNS Record Type) <span class="required">*</span>
+            </label>
+            <select id="recordType" class="form-control" onchange="handleRecordTypeChange()">
+              <option value="A" selected>A (Trỏ tới địa chỉ IPv4 - phổ biến nhất)</option>
+              <option value="CNAME">CNAME (Trỏ tới tên miền khác / Heroku / Vercel...)</option>
+              <option value="AAAA">AAAA (Trỏ tới địa chỉ IPv6)</option>
+              <option value="TXT">TXT (Bản ghi văn bản / Xác thực)</option>
+            </select>
+          </div>
+
+          <!-- Target Content (IP / Host) -->
+          <div class="form-group">
+            <label class="form-label" id="lblRecordContent" for="recordContent">
+              Địa chỉ IPv4 Đích (Target IP) <span class="required">*</span>
+            </label>
+            <input type="text" id="recordContent" class="form-control" placeholder="Ví dụ: 103.142.26.15" required>
+            <div class="form-hint" id="hintRecordContent">Nhập địa chỉ IP của VPS / Server của bạn</div>
+          </div>
+
+          <!-- Cloudflare Proxy Toggle -->
+          <div class="form-group" id="proxyOptionContainer">
+            <div class="switch-container">
+              <div>
+                <div style="font-weight: 700; font-size: 0.92rem; display: flex; align-items: center; gap: 6px;">
+                  <span style="color: var(--status-cf-orange);">☁️</span>
+                  <span>Bật Cloudflare Proxy CDN</span>
+                </div>
+                <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">
+                  Tự động bật chứng chỉ SSL (HTTPS), chống DDoS và ẩn IP gốc máy chủ
+                </div>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="recordProxied" checked>
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <!-- TTL Selection -->
+          <div class="form-group">
+            <label class="form-label" for="recordTtl">Thời gian lưu bộ nhớ đệm (TTL)</label>
+            <select id="recordTtl" class="form-control">
+              <option value="1" selected>Tự động (Auto - Khuyên dùng)</option>
+              <option value="60">1 phút</option>
+              <option value="300">5 phút</option>
+              <option value="1800">30 phút</option>
+              <option value="3600">1 giờ</option>
+            </select>
+          </div>
+
+          <!-- Description -->
+          <div class="form-group">
+            <label class="form-label" for="recordDescription">Mô tả / Ghi chú (Tùy chọn)</label>
+            <input type="text" id="recordDescription" class="form-control" placeholder="Đồ án Lập trình Web, Server Node.js...">
+          </div>
+
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('createSubdomainModal')">Hủy bỏ</button>
+          <button type="submit" id="btnSubmitCreateRecord" class="btn btn-primary">Xác Nhận Tạo Subdomain</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL: Chỉnh sửa Subdomain                                                -->
+  <!-- ========================================================================= -->
+  <div id="editRecordModal" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 style="font-size: 1.2rem;">✏️ Cập nhật Bản ghi DNS</h3>
+        <button class="btn btn-secondary btn-icon" onclick="closeModal('editRecordModal')">✕</button>
+      </div>
+      <form id="editRecordForm">
+        <input type="hidden" id="editRecordId">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Tên miền đầy đủ</label>
+            <input type="text" id="editFullDomain" class="form-control" readonly disabled style="opacity: 0.7;">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Loại bản ghi</label>
+            <input type="text" id="editRecordType" class="form-control" readonly disabled style="opacity: 0.7;">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="editRecordContent">
+              Địa chỉ đích mới (IP / Hostname) <span class="required">*</span>
+            </label>
+            <input type="text" id="editRecordContent" class="form-control" required>
+          </div>
+
+          <div class="form-group" id="editProxyContainer">
+            <div class="switch-container">
+              <div>
+                <div style="font-weight: 700; font-size: 0.92rem; display: flex; align-items: center; gap: 6px;">
+                  <span style="color: var(--status-cf-orange);">☁️</span>
+                  <span>Bật Cloudflare Proxy CDN</span>
+                </div>
+                <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">
+                  Ẩn IP gốc & Bật SSL tự động
+                </div>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="editRecordProxied">
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="editRecordDescription">Ghi chú</label>
+            <input type="text" id="editRecordDescription" class="form-control">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('editRecordModal')">Hủy</button>
+          <button type="submit" id="btnSubmitEditRecord" class="btn btn-primary">Lưu Thay Đổi</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL: Kiểm tra DNS (Check DNS Propagation)                               -->
+  <!-- ========================================================================= -->
+  <div id="checkDnsModal" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 style="font-size: 1.2rem;">🔍 Kiểm tra Phân giải DNS</h3>
+        <button class="btn btn-secondary btn-icon" onclick="closeModal('checkDnsModal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div style="text-align: center; margin-bottom: 20px;">
+          <div style="font-size: 1.1rem; font-weight: 700; color: var(--accent-secondary);" id="checkDomainTarget">...</div>
+          <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px;">Kiểm tra phân giải từ máy chủ DNS thực tế</div>
+        </div>
+
+        <div id="checkDnsResult" style="padding: 16px; border-radius: var(--radius-md); background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); font-family: monospace; font-size: 0.9rem;">
+          Đang truy vấn máy chủ DNS...
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('checkDnsModal')">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL: Đổi mật khẩu                                                       -->
+  <!-- ========================================================================= -->
+  <div id="changePasswordModal" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 style="font-size: 1.2rem;">🔒 Đổi Mật Khẩu</h3>
+        <button class="btn btn-secondary btn-icon" onclick="closeModal('changePasswordModal')">✕</button>
+      </div>
+      <form id="changePasswordForm">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label" for="currentPassword">Mật khẩu hiện tại <span class="required">*</span></label>
+            <input type="password" id="currentPassword" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="newPassword">Mật khẩu mới <span class="required">*</span></label>
+            <input type="password" id="newPassword" class="form-control" minlength="6" placeholder="Tối thiểu 6 ký tự" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="confirmNewPassword">Xác nhận mật khẩu mới <span class="required">*</span></label>
+            <input type="password" id="confirmNewPassword" class="form-control" minlength="6" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('changePasswordModal')">Hủy</button>
+          <button type="submit" class="btn btn-primary">Cập Nhật Mật Khẩu</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/js/common.js"></script>
+  <script src="/js/student.js"></script>
+</body>
+</html>
